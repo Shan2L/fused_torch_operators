@@ -23,5 +23,4 @@ print(golden_result[0])
 
 # result by fused op
 fused_result = fused_stack_add_index.forward(tensor_list, other, index, 1, 2);
-print(fused_result == golden_result)
-print(fused_result[0].dtype)
+print(torch.all(fused_result == golden_result))
