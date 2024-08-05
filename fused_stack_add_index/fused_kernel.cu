@@ -15,13 +15,9 @@ std::vector<int64_t> get_stride_by_shape(const std::vector<int64_t>& shape)
 
 std::vector<int64_t> get_stack_out_shape(const std::vector<torch::Tensor>& inputs, int dim){
     int num_input = inputs.size();
-    int ndim = inputs[0].dim();
-    std::vector<int64_t> out_shape;
-    for (int i=0; i<ndim; i++)
-    {
-        out_shape.push_back(inputs[i].size(i));
-    }
+    std::vector<int64_t> out_shape = inputs[0].sizes().vec();
     out_shape.insert(out_shape.begin()+dim, num_input);
+
     return out_shape;
 }
 
@@ -40,23 +36,24 @@ template <int ndim, typename scalar_t>
 struct TensorMetadata
 {
 public:
-    int ndim_ = ndim;
+    TensorMetadata(const std::vector<int64_t>& size, const std::vector<int64_t>& stride ,scalar_t* data_ptr)
+    {
+        for (int i=0; i<ndim; i++)
+        {
+            this->size[i] = size[i];
+            this->stride[i] = stride[i];
+        }
+        this->data_ptr = data_ptr;
+    }
     scalar_t* data_ptr ;
-    int size[ndim];
-    int stride[ndim];
+    int64_t size[ndim];
+    int64_t stride[ndim];
 };
 
 template <int ndim>
 struct Coord
 {
 public:
-    Coord()
-    {
-        for (int i=0; i<ndim; i++)
-        {
-            index[i] = -1;
-        }
-    }
     int ndim_ = ndim;
     int64_t index[ndim];
 };
@@ -169,32 +166,6 @@ void fused_kernel(
     }
 }
 
-template <int ndim, typename scalar_t>
-TensorMetadata<ndim, scalar_t> make_tensor_metadata_from_vec(const std::vector<int64_t>& shape, const std::vector<int64_t>& stride, scalar_t* data_ptr)
-{
-    TensorMetadata<ndim, scalar_t> tensor_metadata;
-    tensor_metadata.data_ptr = data_ptr;
-    for (int i=0; i<ndim; i++)
-    {
-        tensor_metadata.stride[i] = stride[i];
-        tensor_metadata.size[i] = shape[i];
-    }
-    return tensor_metadata;
-}
-
-template <int ndim, typename scalar_t>
-TensorMetadata<ndim, scalar_t> make_tensor_metadata(const torch::Tensor& tensor)
-{
-    TensorMetadata<ndim, scalar_t> tensor_metadata;
-    tensor_metadata.data_ptr = (scalar_t*)tensor.data_ptr();
-    for (int i=0; i<ndim; i++)
-    {
-        tensor_metadata.stride[i] = tensor.stride(i);
-        tensor_metadata.size[i] = tensor.size(i);
-    }
-    return tensor_metadata;
-}
-
 template<int input_ndim, int index_ndim, typename in_scalar_t, typename index_scalar_t>
 void launch_kernel(torch::Tensor& out, const std::vector<torch::Tensor>& inputs, torch::Tensor& add, torch::Tensor& index, int64_t stack_dim, int64_t index_dim)
 {
@@ -204,14 +175,14 @@ void launch_kernel(torch::Tensor& out, const std::vector<torch::Tensor>& inputs,
     std::vector<int64_t> stack_stride = get_stride_by_shape(stack_shape);
 
     // prepare metadata
-    auto out_metadata = make_tensor_metadata<input_ndim+index_ndim, in_scalar_t>(out);
-    auto index_metadata = make_tensor_metadata<index_ndim, index_scalar_t>(index);
-    auto stack_metadata = make_tensor_metadata_from_vec<input_ndim+1, in_scalar_t>(stack_shape, stack_stride, nullptr);
-    auto add_metadata = make_tensor_metadata<3, in_scalar_t>(add);
+    TensorMetadata<input_ndim+index_ndim, in_scalar_t> out_metadata(out.sizes().vec(), out.strides().vec(), (in_scalar_t*)out.data_ptr());
+    TensorMetadata<index_ndim, index_scalar_t> index_metadata(index.sizes().vec(), index.strides().vec(), index.data_ptr<index_scalar_t>());
+    TensorMetadata<input_ndim+1, in_scalar_t> stack_metadata(stack_shape, stack_stride, nullptr);
+    TensorMetadata<3, in_scalar_t> add_metadata(add.sizes().vec(), add.strides().vec(), (in_scalar_t*)add.data_ptr());
     std::vector<TensorMetadata<input_ndim, in_scalar_t>> input_metadatas;
     for(int i=0; i<num_input; i++)
     {  
-        auto input_meta = make_tensor_metadata<input_ndim, in_scalar_t>(inputs[i]);
+        TensorMetadata<input_ndim, in_scalar_t> input_meta(inputs[i].sizes().vec(), inputs[i].strides().vec(), (in_scalar_t*)inputs[i].data_ptr());
         input_metadatas.push_back(input_meta);
     }
     TensorMetadata<input_ndim, in_scalar_t>* in_meta_d;

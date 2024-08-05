@@ -4,14 +4,9 @@
 void fused_stack_add_index_cuda(torch::Tensor& out, const std::vector<torch::Tensor>& inputs, torch::Tensor& add, torch::Tensor& index, int64_t stack_dim, int64_t index_dim);
 
 std::vector<int64_t> get_out_shape(std::vector<torch::Tensor>& inputs, torch::Tensor& index, int64_t stack_dim, int64_t index_dim){
-    int64_t input_ndim = inputs[0].dim();
     int64_t index_ndim = index.dim();
     int64_t num_input = inputs.size();
-    std::vector<int64_t> out_shape;
-    for (int64_t i=0; i<input_ndim; i++)
-    {
-        out_shape.emplace_back(inputs[0].size(i));
-    }
+    std::vector<int64_t> out_shape = inputs[0].sizes().vec();
     out_shape.insert(out_shape.begin()+stack_dim, num_input);
     out_shape.erase(out_shape.begin()+index_dim);
     for (int64_t i=index_ndim-1; i>=0; i--)
@@ -46,11 +41,11 @@ torch::Tensor fused_stack_add_index(std::vector<torch::Tensor>& inputs, torch::T
     bool illegal_shape = false;
     for (int64_t i=0; i<input_ndim; i++)
     {
-        if (inputs[i].scalar_type() != inputs[0].scalar_type()) same_dtype = false;
         if (i == unwrapper_stack_dim) continue;
         for (int64_t j=1; j<num_input; j++)
         {  
-           if (inputs[j].size(i) != inputs[j-1].size(i)) illegal_shape = true;
+            if (inputs[j].scalar_type() != inputs[0].scalar_type()) same_dtype = false;
+            if (inputs[j].size(i) != inputs[j-1].size(i)) illegal_shape = true;
         }
     }
     TORCH_INTERNAL_ASSERT(!illegal_shape, "the shape of input tensors must be same except for the concat dim");
