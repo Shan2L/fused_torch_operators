@@ -86,7 +86,7 @@ int main() {
         CUDA_CHECK(cudaMemcpy(b_dev, input_b[b].data(), k * n * sizeof(float),
                               cudaMemcpyHostToDevice));
         CUDA_CHECK(cudaMemcpy(c_dev, out_c[b].data(), m * n * sizeof(float),
-                                cudaMemcpyHostToDevice));
+                              cudaMemcpyHostToDevice));
         a_ptrs[b] = static_cast<float*>(a_dev);
         b_ptrs[b] = static_cast<float*>(b_dev);
         c_ptrs[b] = static_cast<float*>(c_dev);
@@ -95,14 +95,15 @@ int main() {
     void** a_ptr_dev;
     void** b_ptr_dev;
     void** c_ptr_dev;
-    CUDA_CHECK(cudaMalloc(&a_ptr_dev, batch*sizeof(float*)));
-    CUDA_CHECK(cudaMalloc(&b_ptr_dev, batch*sizeof(float*)));
-    CUDA_CHECK(cudaMalloc(&c_ptr_dev, batch*sizeof(float*)));
-    CUDA_CHECK(cudaMemcpy(a_ptr_dev, a_ptrs, batch*sizeof(float*), cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(b_ptr_dev, b_ptrs, batch*sizeof(float*), cudaMemcpyHostToDevice));
-    CUDA_CHECK(cudaMemcpy(c_ptr_dev, c_ptrs, batch*sizeof(float*), cudaMemcpyHostToDevice));
-
-
+    CUDA_CHECK(cudaMalloc(&a_ptr_dev, batch * sizeof(float*)));
+    CUDA_CHECK(cudaMalloc(&b_ptr_dev, batch * sizeof(float*)));
+    CUDA_CHECK(cudaMalloc(&c_ptr_dev, batch * sizeof(float*)));
+    CUDA_CHECK(cudaMemcpy(a_ptr_dev, a_ptrs, batch * sizeof(float*),
+                          cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(b_ptr_dev, b_ptrs, batch * sizeof(float*),
+                          cudaMemcpyHostToDevice));
+    CUDA_CHECK(cudaMemcpy(c_ptr_dev, c_ptrs, batch * sizeof(float*),
+                          cudaMemcpyHostToDevice));
 
     // Get Cpu result
     auto cpu_result = CpuKernel(input_a, input_b, batch, m, n, k);
@@ -112,24 +113,23 @@ int main() {
     float beta = 1.;
     cublasHandle_t handle;
     CUBLAS_CHECK(cublasCreate(&handle));
-    CUBLAS_CHECK(cublasSgemmBatched(handle, CUBLAS_OP_N, CUBLAS_OP_N, n, m, k,
-                                    &alpha, (float**)b_ptr_dev, n, (float**)a_ptr_dev, k,
-                                    &beta, (float**)c_ptr_dev, n, batch));
+    CUBLAS_CHECK(cublasSgemmBatched(
+        handle, CUBLAS_OP_N, CUBLAS_OP_N, n, m, k, &alpha, (float**)b_ptr_dev,
+        n, (float**)a_ptr_dev, k, &beta, (float**)c_ptr_dev, n, batch));
 
     // Check result
-    std::vector<std::vector<float>> out_host(batch, std::vector<float>(m*n, 0));
+    std::vector<std::vector<float>> out_host(batch,
+                                             std::vector<float>(m * n, 0));
     for (int b = 0; b < batch; b++) {
         float* c_dev = (float*)c_ptrs[b];
         CUDA_CHECK(cudaMemcpy(out_host[b].data(), c_dev, m * n * sizeof(float),
                               cudaMemcpyDeviceToHost));
-
     }
 
     for (int b = 0; b < batch; b++) {
         for (int i = 0; i < m * n; i++) {
             float diff = abs(cpu_result[b][i] - out_host[b][i]);
-            if (std::abs(cpu_result[b][i] - out_host[b][i]) > 1e-6)
-            {
+            if (std::abs(cpu_result[b][i] - out_host[b][i]) > 1e-6) {
                 std::cout << "The difference is too big." << std::endl;
                 std::exit(-1);
             }
