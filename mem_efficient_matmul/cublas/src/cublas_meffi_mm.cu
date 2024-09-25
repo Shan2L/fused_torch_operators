@@ -28,7 +28,6 @@ torch::Tensor memory_efficent_matmul(torch::Tensor& mat_a, torch::Tensor& mat_b,
     int64_t m = a_size[0];
     int64_t n = b_size[1];
     int64_t k = a_size[1];
-    std::cout << m << ", " << n << ", " << k << std::endl;
 
     torch::Tensor out = at::zeros({m, n}, mat_a.options());
 
@@ -36,16 +35,12 @@ torch::Tensor memory_efficent_matmul(torch::Tensor& mat_a, torch::Tensor& mat_b,
     void* a_ptr = mat_a.data_ptr();
     void* b_ptr = mat_b.data_ptr();
 
-    std::cout << 123 << std::endl;
-
-    //TODO padding
     size_t tile_num_m = (m + tile_size - 1) / tile_size;
     size_t tile_num_n = (n + tile_size - 1) / tile_size;
     size_t tile_num_k = (k + tile_size - 1) / tile_size;
     size_t pad_m = tile_num_m * tile_size;
     size_t pad_n = tile_num_n * tile_size;
     size_t pad_k = tile_num_k * tile_size;
-    std::cout << pad_m << ", " << pad_n << ", " << pad_k << std::endl;
 
     float* out_ptr_pad = (float*)malloc(pad_m * pad_n * sizeof(float));
     if (out_ptr_pad == nullptr) {
@@ -65,7 +60,6 @@ torch::Tensor memory_efficent_matmul(torch::Tensor& mat_a, torch::Tensor& mat_b,
     std::fill(out_ptr_pad, out_ptr_pad + pad_m * pad_n, 0.);
     std::fill(a_ptr_pad, a_ptr_pad + pad_m * pad_k, 0.);
     std::fill(b_ptr_pad, b_ptr_pad + pad_k * pad_n, 0.);
-    std::cout << 789 << std::endl;
 
     CUDA_CHECK(cudaMemcpy2D(out_ptr_pad, pad_n * sizeof(float), out_ptr,
                             n * sizeof(float), n * sizeof(float), m,
@@ -80,7 +74,6 @@ torch::Tensor memory_efficent_matmul(torch::Tensor& mat_a, torch::Tensor& mat_b,
     size_t hpitch_out = pad_n * sizeof(float);
     size_t hpitch_a = pad_k * sizeof(float);
     size_t hpitch_b = pad_n * sizeof(float);
-    std::cout << "aaa" << std::endl;
 
     cudaStream_t stream_a, stream_b, stream_out2dev, stream_cublas,
         stream_out2host;
@@ -96,8 +89,6 @@ torch::Tensor memory_efficent_matmul(torch::Tensor& mat_a, torch::Tensor& mat_b,
     CUDA_CHECK(cudaEventCreate(&event_cublas));
     CUDA_CHECK(cudaEventCreate(&event_out2host));
 
-    std::cout << "bbb" << std::endl;
-
     cublasHandle_t cublas_handle;
     CUBLAS_CHECK(cublasCreate(&cublas_handle));
     CUBLAS_CHECK(cublasSetStream(cublas_handle, stream_cublas));
@@ -110,7 +101,6 @@ torch::Tensor memory_efficent_matmul(torch::Tensor& mat_a, torch::Tensor& mat_b,
         cudaMallocPitch(&b_dev, &dpitch, tile_size * sizeof(float), tile_size));
     CUDA_CHECK(cudaMallocPitch(&out_dev, &dpitch, tile_size * sizeof(float),
                                tile_size));
-    std::cout << "ccc" << std::endl;
 
     float alpha = 1.0;
     float beta = 1.0;
@@ -191,6 +181,6 @@ torch::Tensor memory_efficent_matmul(torch::Tensor& mat_a, torch::Tensor& mat_b,
 }
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-    m.def("mm", &memory_efficent_matmul,
+    m.def("forward", &memory_efficent_matmul,
           "Fused kernel of concat and embedding");
 }

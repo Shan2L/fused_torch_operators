@@ -1,10 +1,5 @@
 import torch
-import memory_efficient_matmul
 from torch.profiler import profile, ProfilerActivity
-
-
-
-
 
 with profile(
 	activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],

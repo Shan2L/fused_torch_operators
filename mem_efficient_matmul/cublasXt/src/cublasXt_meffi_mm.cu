@@ -102,6 +102,6 @@ torch::Tensor memory_efficent_matmul(torch::Tensor &mat_a, torch::Tensor &mat_b,
 
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-    m.def("mm", &memory_efficent_matmul,
+    m.def("forward", &memory_efficent_matmul,
         "Fused kernel of concat and embedding");
 }

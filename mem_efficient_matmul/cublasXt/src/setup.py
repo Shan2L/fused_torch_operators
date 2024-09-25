@@ -3,12 +3,12 @@ from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 import torch
 
 setup(
-    name='memory_efficient_matmul',
+    name='cublasXt_meffi_mm',
     ext_modules=[
         CUDAExtension(
-            name='memory_efficient_matmul',
+            name='cublasXt_meffi_mm',
             sources=[
-                'mem_efficient_matmul.cu',
+                'cublasXt_meffi_mm.cu',
              ],
             include_dirs=["/usr/local/cuda/include"],
             library_dirs=["/usr/local/cuda/lib64"]
