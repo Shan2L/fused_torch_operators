@@ -26,6 +26,6 @@ print(f"max: {torch.abs(res-golden).max()}")
 print(f"mean: {torch.abs(res-golden).mean()}")
 
 
-with open("golden.txt", 'w')as f1, open("res.txt", "w") as f2:
-    f1.write(str(golden))
-    f2.write(str(res))
+# with open("golden.txt", 'w')as f1, open("res.txt", "w") as f2:
+#     f1.write(str(golden))
+#     f2.write(str(res))
