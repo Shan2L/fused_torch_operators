@@ -8,7 +8,7 @@ setup(
         CUDAExtension(
             name='memory_efficient_matmul',
             sources=[
-                'mem_efficient_matmul.cu',
+                'single_memory_efficient_matmul.cu',
              ],
             include_dirs=["/usr/local/cuda/include"],
             library_dirs=["/usr/local/cuda/lib64"]
