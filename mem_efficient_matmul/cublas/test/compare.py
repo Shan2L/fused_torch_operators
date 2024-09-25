@@ -5,7 +5,7 @@ torch.set_printoptions(threshold=float('inf'), edgeitems=10)
 a = torch.randn(1024*16, 1024*32).float()
 b = torch.randn(1024*32, 1024*8).float()
 
-res = memory_efficient_mm.forward(a, b, 1024)
+res = cublas_meffi_mm.forward(a, b, 1024)
 golden = torch.mm(a.cuda(), b.cuda()).cpu()
 
 print(f"min: {torch.abs(res-golden).min()}")

@@ -42,6 +42,8 @@ torch::Tensor memory_efficent_matmul(torch::Tensor& mat_a, torch::Tensor& mat_b,
     size_t pad_n = tile_num_n * tile_size;
     size_t pad_k = tile_num_k * tile_size;
 
+    // TODO Remove this host malloc, the  malloc and copy operation is expensive, which downgrade the latency.
+    // TODO An substitute sulotion is to pad the matrix in tile.
     float* out_ptr_pad = (float*)malloc(pad_m * pad_n * sizeof(float));
     if (out_ptr_pad == nullptr) {
         std::cout << "Failed to allocate memory." << std::endl;
@@ -105,6 +107,7 @@ torch::Tensor memory_efficent_matmul(torch::Tensor& mat_a, torch::Tensor& mat_b,
     float alpha = 1.0;
     float beta = 1.0;
 
+    // TODO the asynchonization has not been enable correctly, the performance looks the same as the serial execution.
     for (int m_tile_idx = 0; m_tile_idx < tile_num_m; m_tile_idx++) {
         for (int n_tile_idx = 0; n_tile_idx < tile_num_n; n_tile_idx++) {
             size_t offset_out =
