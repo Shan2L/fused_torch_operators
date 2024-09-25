@@ -12,8 +12,8 @@ from torch.profiler import profile, ProfilerActivity
 torch.set_printoptions(threshold=float('inf'), edgeitems=10)
 
 
-a = torch.randn(1024, 4096).float().cuda()
-b = torch.randn(4096, 2048).float().cuda()
+a = torch.randn(2016, 1000).float().cuda()
+b = torch.randn(1000, 4000).float().cuda()
 
 print(a.stride())
 print(b.stride())
@@ -26,6 +26,6 @@ print(f"max: {torch.abs(res-golden).max()}")
 print(f"mean: {torch.abs(res-golden).mean()}")
 
 
-# with open("golden.txt", 'w')as f1, open("res.txt", "w") as f2:
-#     f1.write(str(golden))
-#     f2.write(str(res))
+with open("golden.txt", 'w')as f1, open("res.txt", "w") as f2:
+    f1.write(str(golden))
+    f2.write(str(res))

@@ -11,7 +11,8 @@ setup(
                 'single_memory_efficient_matmul.cu',
              ],
             include_dirs=["/usr/local/cuda/include"],
-            library_dirs=["/usr/local/cuda/lib64"]
+            library_dirs=["/usr/local/cuda/lib64"],
+            # extra_compile_args=['-g', '-O0'],
         )
     ],
     cmdclass={
