@@ -5,7 +5,7 @@
 #include <cublas_v2.h>
 #include "errors.h"
 
-torch::Tensor memory_efficent_matmul(torch::Tensor& mat_a, torch::Tensor& mat_b,
+torch::Tensor cublas_meffi_mm(torch::Tensor& mat_a, torch::Tensor& mat_b,
                                      int tile_size) {
     std::vector<int64_t> a_size = mat_a.sizes().vec();
     std::vector<int64_t> b_size = mat_b.sizes().vec();
@@ -183,7 +183,3 @@ torch::Tensor memory_efficent_matmul(torch::Tensor& mat_a, torch::Tensor& mat_b,
     return out;
 }
 
-PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-    m.def("forward", &memory_efficent_matmul,
-          "Fused kernel of concat and embedding");
-}
