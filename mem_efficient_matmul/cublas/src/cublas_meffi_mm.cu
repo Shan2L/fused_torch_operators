@@ -12,19 +12,6 @@ torch::Tensor cublas_meffi_mm(torch::Tensor& mat_a, torch::Tensor& mat_b,
     std::vector<int64_t> a_stride = mat_a.strides().vec();
     std::vector<int64_t> b_stride = mat_b.strides().vec();
 
-    TORCH_INTERNAL_ASSERT(a_size.size() == 2 && b_size.size() == 2,
-                          "Only support 2-D matmul now!");
-    TORCH_INTERNAL_ASSERT(a_size[1] == b_size[0],
-                          "The dimensions of mat1 and mat2 do not match.");
-    TORCH_INTERNAL_ASSERT(mat_a.scalar_type() == mat_b.scalar_type(),
-                          "Datatype of matrix a and matrix b should be same!");
-
-    TORCH_INTERNAL_ASSERT(mat_a.scalar_type() == torch::ScalarType::Float,
-                          "Only support float for now.");
-
-    TORCH_INTERNAL_ASSERT(mat_a.device().is_cpu() && mat_b.device().is_cpu(),
-                          "Input tensor should be put on host.");
-
     int64_t m = a_size[0];
     int64_t n = b_size[1];
     int64_t k = a_size[1];

@@ -11,8 +11,6 @@ __global__ void check_dev_data(const int id, float* data, int pitch, int sizex)
     data[(blockIdx.x * blockDim.y + threadIdx.y) * pitch/sizeof(float) + threadIdx.x]);
 }
 
-
-
 #define debug_name(name, var) \
     std::cout << name <<": " << var <<std::endl;
 
@@ -32,11 +30,7 @@ torch::Tensor cublas_meffi_bmm(torch::Tensor& mat_a, torch::Tensor& mat_b,
     TORCH_INTERNAL_ASSERT(mat_a.scalar_type() == mat_b.scalar_type(),
                           "Datatype of matrix a and matrix b should be same!");
 
-    TORCH_INTERNAL_ASSERT(mat_a.scalar_type() == torch::ScalarType::Float,
-                          "Only support float for now.");
 
-    TORCH_INTERNAL_ASSERT(mat_a.device().is_cpu() && mat_b.device().is_cpu(),
-                          "Input tensor should be put on host.");
 
 
     // int64_t batch_size = std::accumulate(a_size.rbegin()+2, a_size.rend(), 1, std::multiplies<int64_t>());
@@ -57,6 +51,9 @@ torch::Tensor cublas_meffi_bmm(torch::Tensor& mat_a, torch::Tensor& mat_b,
     void* a_ptr = mat_a.data_ptr();
     void* b_ptr = mat_b.data_ptr();
 
+    // TODO Asynchronization implementation.
+    // TODO replace the resource creation with pytorch builtin function.
+
     // cudaStream_t stream_a, stream_b, stream_out2dev, stream_cublas,
     //     stream_out2host;
     // cudaEvent_t event_a, event_b, event_out2dev, event_cublas, event_out2host;
@@ -75,6 +72,7 @@ torch::Tensor cublas_meffi_bmm(torch::Tensor& mat_a, torch::Tensor& mat_b,
     CUBLAS_CHECK(cublasCreate(&cublas_handle));
     // CUBLAS_CHECK(cublasSetStream(cublas_handle, stream_cublas));
 
+    // TODO replace the cudaMalloc with pytorch inplace function.
     // 目标内存指针设置
     cudaMemcpy3DParms copyParams_a = {0};
     cudaPitchedPtr dstPtr_a;
@@ -223,8 +221,8 @@ torch::Tensor cublas_meffi_bmm(torch::Tensor& mat_a, torch::Tensor& mat_b,
 
     // CUDA_CHECK(cudaFree(a_dev));
     // CUDA_CHECK(cudaFree(b_dev));
-    // CUDA_CHECK(cudaFree(out_dev));
-
+    // CUDA_CHECK(cudaFree(out_dev));   
+    
     return out;
 }
 
